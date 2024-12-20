@@ -1,13 +1,12 @@
 # Approach:
-# A BST's in-order traversal gives nodes in sorted order. If two nodes are swapped, the order will be violated.
-# 1. Perform an in-order traversal to identify the two swapped nodes.
-# 2. During traversal, compare each node with the previous node.
-# 3. The first swapped node is found when a node is smaller than its predecessor.
-# 4. The second swapped node is found later when another smaller node is encountered.
-# 5. Swap the values of the two identified nodes to restore the BST.
+# The Morris Traversal allows us to perform in-order traversal without using extra space.
+# 1. For each node, find its predecessor in the left subtree.
+# 2. Modify the tree temporarily to create links to traverse back up.
+# 3. Identify the two swapped nodes during traversal.
+# 4. Restore the tree to its original structure after traversal.
 
-# Time Complexity: O(n), where n is the number of nodes, as we perform an in-order traversal.
-# Space Complexity: O(1) (excluding recursion stack), as the solution uses constant space.
+# Time Complexity: O(n), where n is the number of nodes, as each node is visited at most twice.
+# Space Complexity: O(1), as no extra space is used apart from a few pointers.
 # Did this code successfully run on Leetcode: Yes
 # Any problem you faced while coding this: No
 
@@ -23,33 +22,42 @@ class Solution:
         """
         Do not return anything, modify root in-place instead.
         """
-        # Initialize pointers
-        self.first = None  # First swapped node
-        self.second = None  # Second swapped node
-        self.prev = TreeNode(float('-inf'))  # Previous node in in-order traversal
-        
-        def in_order_traversal(node):
-            # Base case
-            if not node:
-                return
-            
-            # Traverse the left subtree
-            in_order_traversal(node.left)
-            
-            # Check for swapped nodes
-            if not self.first and self.prev.val > node.val:
-                self.first = self.prev  # First time the order is violated
-            if self.first and self.prev.val > node.val:
-                self.second = node  # Second time the order is violated
-            
-            # Update the previous node
-            self.prev = node
-            
-            # Traverse the right subtree
-            in_order_traversal(node.right)
-        
-        # Perform in-order traversal to find swapped nodes
-        in_order_traversal(root)
-        
-        # Swap the values of the two nodes to fix the BST
-        self.first.val, self.second.val = self.second.val, self.first.val
+        first = second = prev = None
+        current = root
+
+        while current:
+            if not current.left:
+                # Process current node
+                if prev and prev.val > current.val:
+                    if not first:
+                        first = prev  # First violation
+                    second = current  # Second violation
+                
+                # Update previous node
+                prev = current
+                current = current.right
+            else:
+                # Find the rightmost node in the left subtree (predecessor)
+                predecessor = current.left
+                while predecessor.right and predecessor.right != current:
+                    predecessor = predecessor.right
+
+                # Create a temporary link back to the current node
+                if not predecessor.right:
+                    predecessor.right = current
+                    current = current.left
+                else:
+                    # Remove the temporary link and process the current node
+                    predecessor.right = None
+                    if prev and prev.val > current.val:
+                        if not first:
+                            first = prev  # First violation
+                        second = current  # Second violation
+                    
+                    # Update previous node
+                    prev = current
+                    current = current.right
+
+        # Swap the values of the two identified nodes to fix the BST
+        if first and second:
+            first.val, second.val = second.val, first.val
